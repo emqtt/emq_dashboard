@@ -71,6 +71,10 @@
 			}, ajaxInfo || {}));
 		},
 		
+		broker : function(callback) {
+		    this._ajax('brokers', null, callback);
+		},
+		
 		// bnode
 		bnode : function(callback) {
 			this._ajax("bnode", null, callback);

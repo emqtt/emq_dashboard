@@ -402,6 +402,7 @@ function showOverview() {
 	
         clearInterval(overview.timetask);
 		overview.timetask = setInterval(function() {
+		        overview.broker();
 			overview.nodes();
 			overview.stats();
 			overview.metrics();
@@ -414,46 +415,15 @@ function showOverview() {
 	var c = null, tt = null;
 	
 	ov.broker = function() {
-		if (c != null) {
-			return;
-		}
-		c = new Paho.MQTT.Client(location.hostname, 8083, 'Dashboard_' + new Date().getTime());
-		c.onConnectionLost = onConnectionLost;
-		c.onMessageArrived = onMessageArrived;
-		// called when the client loses its connection
-		function onConnectionLost(responseObject) {
-			if (responseObject.errorCode !== 0) {
-			}
-		}
-		// called when a message arrives
-		function onMessageArrived(message) {
-			var topic = message.destinationName;
-			var lastNum = topic.lastIndexOf("/");
-			var endStr = topic.substring(lastNum);
-			if (endStr == "/sysdescr"){
-				$('#sys_name').text(message.payloadString);
-			} else if (endStr == "/version") {
-				$('#sys_version').text(message.payloadString);
-			} else if (endStr == "/uptime") {
-				$('#sys_uptime').text(message.payloadString);
-			} else {
-				$('#sys_time').text(message.payloadString);
-			}
-		}
-		dashApi.bnode(function(ret, err) {
-			if (ret) {
-				c.connect({
-					onSuccess : function() {
-						c.subscribe("\$SYS/brokers/"+ ret.node +"/+");
-					},
-					userName : "dashboard",
-					password : ""
-				});
-			} else {
-				console.log(err);
-			}
-		});
-	}
+            dashApi.broker(function(ret, err) {
+                if (ret) {
+                    $('#sys_name').text(ret.sysdescr);
+                    $('#sys_version').text(ret.version);
+                    $('#sys_uptime').text(ret.uptime);
+                    $('#sys_time').text(ret.datetime);
+                }
+            });
+	};
 	
 	ov.nodes = function() {
 		dashApi.nodes(function(ret, err) {
@@ -1112,6 +1082,7 @@ function showWebsocket() {
 		var userName = $('#user_name').val();
 		var password = $('#password').val();
 		var keepAlive = $('#keep_alive').val();
+		var cleanSession = $('#clean_session:checked');
 		if (userName != "") {
 			options.userName = userName;
 		}
@@ -1120,6 +1091,11 @@ function showWebsocket() {
 		}
 		if (keepAlive != "") {
 			options.keepAliveInterval = Number(keepAlive);
+		}
+		if (cleanSession.length > 0) {
+		    options.cleanSession = true;
+		} else {
+		    options.cleanSession = false;
 		}
 		client.connect(options);
 	};
@@ -1134,7 +1110,8 @@ function showWebsocket() {
 	
 	wSocket.subscribe = function(client) {
 		var topic = $('#subscription').val();
-		client.subscribe(topic);
+		var qos = $('#qos_2').val();
+		client.subscribe(topic, {qos : Number(qos)});
 		var nowStr = (new Date()).format("yyyy-MM-dd hh:mm:ss");
 		$('#subscriptions_list').append('<div>Subscribe Topic: ' 
 			+ topic + '<cite> ' 
@@ -1144,8 +1121,16 @@ function showWebsocket() {
 	wSocket.sendMessage = function(client) {
 		var topic = $('#topic').val();
 		var msg = $('#message').val();
+		var qos = $('#qos_3').val();
+		var retained = $('#retained:checked');
 		var message = new Paho.MQTT.Message(msg);
 		message.destinationName = topic;
+		message.qos = Number(qos);
+		if (retained.length > 0) {
+		    message.retained = true;
+		} else {
+		    message.retained = false;
+		}
 		client.send(message);
 		var nowStr = (new Date()).format("yyyy-MM-dd hh:mm:ss");
 		$('#send_message_list').append('<div>Send Message: ' 
@@ -1282,10 +1267,10 @@ var User = {
 		editSubmit : function() {
 			var user = {};
 			var m = $('#modal_user_edit');
-			user.user_name = $.trim(m.find('#user_add_name').val());
-			user.tags = $.trim(m.find('#user_add_remark').val());
-			user.password = $.trim(m.find('#user_add_pwd').val());
-			user.pwd_1 = $.trim(m.find('#user_add_pwd_1').val());
+			user.user_name = $.trim(m.find('#user_edit_name').val());
+			user.tags = $.trim(m.find('#user_edit_remark').val());
+			user.password = $.trim(m.find('#user_edit_pwd').val());
+			user.pwd_1 = $.trim(m.find('#user_edit_pwd_1').val());
 			if (user.user_name == '') {
 				alert("Username is required.");
 				return;

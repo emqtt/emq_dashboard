@@ -23,9 +23,18 @@
 
 -import(proplists, [get_value/2]).
 
--export([stats/0, ptype/0, memory/0, cpu/0, nodes_info/0, node_info/0,
-         metrics/0, listeners/0, bnode/0]).
+-export([brokers/0,
+         stats/0,
+         ptype/0, 
+         memory/0,
+         cpu/0, 
+         nodes_info/0,
+         node_info/0,
+         metrics/0, 
+         listeners/0, 
+         bnode/0]).
 
+-http_api({"brokers",  brokers,   []}).
 -http_api({"stats",    stats,     []}).
 -http_api({"ptype",    ptype,     []}).
 -http_api({"memory",   memory,    []}).
@@ -38,6 +47,13 @@
 -define(KB, 1024).
 -define(MB, (1024*1024)).
 -define(GB, (1024*1024*1024)).
+
+brokers() ->
+    Funs = [sysdescr, version, uptime, datetime],
+    {ok, lists:map(fun broker/1, Funs)}.
+
+broker(Fun) ->
+    {Fun, iolist_to_binary(emqttd_broker:Fun())}.
 
 stats() ->
     {ok, emqttd_stats:getstats()}.

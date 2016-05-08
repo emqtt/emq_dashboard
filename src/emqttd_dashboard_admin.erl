@@ -25,7 +25,7 @@
 -export([start_link/0]).
 
 %%mqtt_admin api
--export([add_user/3, remove_user/1, update_user/3, lookup_user/1,
+-export([add_user/3, remove_user/1, update_user/3, lookup_user/1, change_password/2, 
          all_users/0, check/2]).
 
 %% gen_server Function Exports
@@ -55,7 +55,6 @@ add_user_(Admin = #mqtt_admin{username = Username}) ->
 -spec(remove_user(binary()) -> ok | {error, any()}).
 remove_user(Username) when is_binary(Username) ->
     return(mnesia:transaction(fun mnesia:delete/1, [{mqtt_admin, Username}])).
-
 -spec(update_user(binary(), binary(), binary()) -> ok | {error, any()}).
 update_user(Username, Password, Tags) when is_binary(Username), is_binary(Password) ->
     Admin = #mqtt_admin{username = Username, password = hash(Password), tags = Tags},
@@ -67,6 +66,27 @@ update_user_(Admin = #mqtt_admin{username = Username}) ->
         []  -> mnesia:abort("username not found");
         [_] -> mnesia:write(Admin)
     end.
+
+change_password(Username, Password) when is_binary(Username), is_binary(Password) ->
+    change_password_hash(Username, hash(Password)).
+
+change_password_hash(Username, PasswordHash) ->
+    update_pwd(Username, fun(User) ->
+                        User#mqtt_admin{password = PasswordHash}
+                end).
+
+update_pwd(Username, Fun) ->
+    Trans = fun() ->
+                    User = 
+                    case lookup_user(Username) of
+                    [Admin] -> Admin;
+                    [] ->
+                           mnesia:abort("Username Not Found")
+                    end,
+                    mnesia:write(Fun(User))
+            end,
+    return(mnesia:transaction(Trans)).
+
 
 -spec(lookup_user(binary()) -> [mqtt_admin()]).
 lookup_user(Username) when is_binary(Username) -> mnesia:dirty_read(mqtt_admin, Username).
@@ -109,33 +129,11 @@ init([]) ->
     %% Wait???
     %% mnesia:wait_for_tables([mqtt_admin], 5000),
     % Init mqtt_admin table
-    case mnesia:table_info(mqtt_admin, size) of
-        0 ->
-            Admin = case application:get_env(emqttd_dashboard, default_admin) of
-                {ok, Default} ->
-                    #mqtt_admin{username = bin(proplists:get_value(login, Default)),
-                                password = hash(bin(proplists:get_value(password, Default))),
-                                tags = <<"administrator">>};
-                undefined -> %% 
-                    #mqtt_admin{username = <<"admin">>,
-                                password = hash(<<"public">>),
-                                tags = <<"administrator">>}
-            end,
-            mnesia:transaction(fun mnesia:write/1, [Admin]);
-        _ ->
-            %% Fix issue #24 
-            mnesia:transaction(fun() ->
-                AtomNames = [Key || Key <- mnesia:all_keys(mqtt_admin), is_atom(Key)],
-                lists:foreach(fun(Name) ->
-                    case mnesia:read(mqtt_admin, Name, write) of
-                        [Admin] ->
-                            mnesia:delete({mqtt_admin, Name}),
-                            mnesia:write(Admin#mqtt_admin{username = bin(Admin)});
-                        [] ->
-                            ok
-                    end
-                end, AtomNames)
-           end)
+    case needs_defaut_user() of
+        true ->
+            insert_default_user();
+        false ->
+            ok
     end,
     {ok, state}.
 
@@ -170,7 +168,16 @@ salt() ->
     Salt = random:uniform(16#ffffffff),
     <<Salt:32>>.
 
-bin(S) when is_list(S)   -> list_to_binary(S);
-bin(A) when is_atom(A)   -> bin(atom_to_list(A));
-bin(B) when is_binary(B) -> B.
+needs_defaut_user() ->
+    is_empty(mqtt_admin).
 
+is_empty(Tab) ->
+    mnesia:dirty_first(Tab) == '$end_of_table'.
+
+insert_default_user() ->
+    Admin = #mqtt_admin{username = <<"admin">>,
+                        password = hash(<<"public">>),
+                        tags = <<"administrator">>},
+    mnesia:transaction(fun mnesia:write/1, [Admin]).
+
+     

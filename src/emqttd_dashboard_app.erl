@@ -27,9 +27,11 @@ start(_StartType, _StartArgs) ->
     {ok, Listener} = application:get_env(emqttd_dashboard, listener),
     ok = emqttd_access_control:register_mod(auth, emqttd_auth_dashboard, [Listener], 9999),
     open_listener(Listener),
+    emqttd_dashboard_cli:load(),
     {ok, Sup}.
 
 stop(_State) ->
+    emqttd_dashboard_cli:unload(),
     emqttd_access_control:unregister_mod(auth, emqttd_auth_dashboard),
     {ok, {_Proto, Port, _Opts}} = application:get_env(emqttd_dashboard, listener),
     mochiweb:stop_http(Port).

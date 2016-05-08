@@ -62,8 +62,16 @@
                     </div>
                     </div>
                     
+                    <div class="col-sm-12">
+                    <div class="form-group">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" value="1" id="clean_session" checked/>Clean Session 
+                    </label>
                     </div>
-
+                    </div>
+                    
+                    </div>
+                    
                     <div class="row">
                     
                     <div class="col-sm-12">
@@ -93,7 +101,7 @@
             <div class="panel-heading">
                 <h3 class="panel-title">Receive Message</h3>
             </div>
-            <div class="panel-body" id="receive_message">
+            <div class="panel-body" id="receive_message" style="overflow: auto;height: 260px;">
 
                 
 
@@ -116,11 +124,21 @@
 
                     <div class="row">
                     
-                    <div class="col-sm-12">
+                    <div class="col-sm-6">
                     <div class="form-group">
                         <label for="subscription">Subscription:</label> <input type="text"
                             class="form-control" id="subscription"
                             placeholder="Subscription" value="/World">
+                    </div>
+                    </div>
+                    <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="qos_2">QoS:</label>
+                        <select class="form-control" id="qos_2">
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                        </select>
                     </div>
                     </div>
                     
@@ -149,7 +167,7 @@
             <div class="panel-heading">
                 <h3 class="panel-title">Subscriptions List</h3>
             </div>
-            <div class="panel-body" id="subscriptions_list">
+            <div class="panel-body" id="subscriptions_list" style="overflow: auto;height: 230px;">
 
                 
 
@@ -178,10 +196,34 @@
                             class="form-control" id="topic"
                             placeholder="Topic" value="/World">
                     </div>
+                    </div>
+                    
+                    </div>
+                    
+                    <div class="row">
+                    
+                    <div class="col-sm-6">
                     <div class="form-group">
                         <label for="message">Message:</label> <input type="text"
                             class="form-control" id="message"
                             placeholder="Message" value="Hello world!">
+                    </div>
+                    </div>
+                    <div class="col-sm-6">
+                    <div class="form-group">
+                        <label for="qos_3">QoS:</label>
+                        <select class="form-control" id="qos_3">
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                        </select>
+                    </div>
+                    </div>
+                    <div class="col-sm-12">
+                    <div class="form-group">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" value="1" id="retained" checked/>Retained 
+                    </label>
                     </div>
                     </div>
                     
@@ -210,7 +252,7 @@
             <div class="panel-heading">
                 <h3 class="panel-title">Send Message List</h3>
             </div>
-            <div class="panel-body" id="send_message_list">
+            <div class="panel-body" id="send_message_list" style="overflow: auto;height: 230px;">
 
                 
 
