@@ -21,6 +21,12 @@
 
 -include("emq_dashboard.hrl").
 
+%% Mnesia Callbacks
+-export([mnesia/1]).
+%%
+-boot_mnesia({mnesia, [boot]}).
+-copy_mnesia({mnesia, [copy]}).
+%%
 %% API Function Exports
 -export([start_link/0]).
 
@@ -31,6 +37,19 @@
 %% gen_server Function Exports
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
+
+
+mnesia(boot) ->
+    emqttd_mnesia:create_table(mqtt_admin, [
+                {type, set},
+                {disc_copies, [node()]},
+                {local_content, true},
+                {record_name, mqtt_admin},
+                {attributes, record_info(fields, mqtt_admin)}]);
+mnesia(copy) ->
+    emqttd_mnesia:copy_table(mqtt_admin),
+    mnesia:change_table_copy_type(mqtt_admin, node(), disc_copies).
+
 
 -spec(start_link() -> {ok, pid()} | ignore | {error, any()}).
 start_link() ->
@@ -128,15 +147,6 @@ check(Username, Password) ->
 %%--------------------------------------------------------------------
 
 init([]) ->
-    % Create mqtt_admin table
-    ok = emqttd_mnesia:create_table(mqtt_admin, [
-                {type, set},
-                {disc_copies, [node()]},
-                {record_name, mqtt_admin},
-                {attributes, record_info(fields, mqtt_admin)}]),
-    ok = emqttd_mnesia:copy_table(mqtt_admin),
-    %% Wait???
-    %% mnesia:wait_for_tables([mqtt_admin], 5000),
     % Init mqtt_admin table
     case needs_defaut_user() of
         true ->
