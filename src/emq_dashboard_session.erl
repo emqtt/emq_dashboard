@@ -58,5 +58,5 @@ row({ClientId, _Pid, _Persistent, SessInfo}) ->
      {created_at,       strftime(get_value(created_at, SessInfo))}].
 
 strftime(Ts) ->
-    iolist_to_binary(emqx_dashboard:strftime(Ts)).
+    iolist_to_binary(emq_dashboard:strftime(Ts)).
 
