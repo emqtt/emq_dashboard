@@ -82,26 +82,27 @@ respond(Req, Code, Data) ->
 %% Handle HTTP Request
 %%--------------------------------------------------------------------
 
-handle_request(Req, State) ->
-    Path = Req:get(path), 
+handle_request(Req, State = #state{docroot = DocRoot}) ->
+    Path = Req:get(path),
     case Path of
         "/api/logout" ->
             respond(Req, 401, []);
-        _ -> 
-            if_authorized(Req, fun() -> handle_request(Path, Req, State) end)
+        "/api/v2/" ++ _Name ->
+            {_, _, [State1]} = emqttd_http:http_handler(),
+            emqttd_http:handle_request(Req, State1);
+        "api/current_user" ->
+            "Basic " ++ BasicAuth =  Req:get_header_value("Authorization"),
+            {Username, _Password} = user_passwd(BasicAuth),
+            respond(Req, 200, [{username, bin(Username)}]);
+        "api/" ++ Name ->
+            if_authorized(Req, fun() -> handle_request("api/" ++ Name, Req, State) end);
+        "/" ++ Rest ->
+            mochiweb_request:serve_file(Rest, DocRoot, Req)
     end.
-    
-handle_request("/api/current_user", Req, _State) ->
-    "Basic " ++ BasicAuth =  Req:get_header_value("Authorization"),
-    {Username, _Password} = user_passwd(BasicAuth),
-    respond(Req, 200, [{username, bin(Username)}]);
 
 handle_request("/api/" ++ Name, Req, #state{dispatch = Dispatch}) ->
     Params = params(Req),
-    Dispatch(Req, Name, Params);
-
-handle_request("/" ++ Rest, Req, #state{docroot = DocRoot}) ->
-    mochiweb_request:serve_file(Rest, DocRoot, Req).
+    Dispatch(Req, Name, Params).
 
 %%--------------------------------------------------------------------
 %% Table Query and Pagination
