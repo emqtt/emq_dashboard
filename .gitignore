@@ -16,3 +16,7 @@ test/ct.cover.spec
 data/
 cover/
 eunit.coverdata
+.DS_Store
+node_modules/
+dist/
+.idea/
