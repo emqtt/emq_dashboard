@@ -9,7 +9,7 @@ Build
 
 make && make ct
 
-Configurtion
+Configuration
 ------------
 
 ```
