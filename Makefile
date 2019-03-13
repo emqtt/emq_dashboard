@@ -5,7 +5,7 @@ PROJECT_VERSION = 2.4.3
 LOCAL_DEPS = mnesia
 
 DEPS = minirest
-dep_minirest = git https://github.com/emqx/minirest
+dep_minirest = git https://github.com/emqx/minirest v0.1.1
 
 BUILD_DEPS = emqx cuttlefish
 dep_emqx = git git@github.com:emqx/emqx-enterprise
